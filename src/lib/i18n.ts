@@ -1,0 +1,370 @@
+export type Lang = 'ru' | 'en' | 'kz'
+
+export interface LangOption {
+  id: Lang
+  name: string
+  flag: string
+}
+
+export const LANGS: LangOption[] = [
+  { id: 'ru', name: 'Русский', flag: '🇷🇺' },
+  { id: 'en', name: 'English', flag: '🇬🇧' },
+  { id: 'kz', name: 'Қазақша', flag: '🇰🇿' },
+]
+
+const ru = {
+  // Sidebar
+  'sidebar.newChat': 'Новый чат',
+  'sidebar.empty': 'Здесь появятся ваши чаты',
+  'sidebar.delete': 'Удалить',
+  'sidebar.settings': 'Настройки',
+  'sidebar.signOut': 'Выйти',
+  'sidebar.justNow': 'только что',
+  'sidebar.minsAgo': 'мин. назад',
+  'sidebar.hoursAgo': 'ч. назад',
+  'sidebar.daysAgo': 'дн. назад',
+
+  // Welcome
+  'welcome.subtitle': 'Платформа объединяющая лучшие ИИ модели. Выберите модель и начните диалог.',
+  'welcome.s1': 'Объясни разницу между var, let и const в JavaScript',
+  'welcome.s2': 'Напиши стихотворение о горах Кавказа',
+  'welcome.s3': 'Помоги составить бизнес-план для стартапа',
+  'welcome.s4': 'Переведи текст с русского на английский',
+
+  // Input
+  'input.placeholderFiles': 'Добавьте описание или отправьте...',
+  'input.placeholder': 'Сообщение для AI Lumiere...',
+  'input.processing': 'Обработка...',
+  'input.hint': 'AI Lumiere может допускать ошибки. Проверяйте важную информацию.',
+  'input.attach': 'Прикрепить файл',
+  'input.stop': 'Остановить',
+  'input.send': 'Отправить',
+
+  // Chat
+  'chat.empty': 'Сообщения не найдены',
+  'chat.emptyHint': 'Начните диалог, отправив сообщение ниже',
+
+  // Message
+  'message.you': 'Вы',
+  'message.export': 'Экспорт',
+
+  // Auth
+  'auth.subtitle': 'ИИ агрегатор для Закавказья, Центральной Азии и СНГ',
+  'auth.verifyTitle': 'Подтвердите вашу почту',
+  'auth.login': 'Вход',
+  'auth.register': 'Регистрация',
+  'auth.emailPlaceholder': 'Email',
+  'auth.passwordPlaceholder': 'Пароль',
+  'auth.passwordMinPlaceholder': 'Пароль (мин. 6 символов)',
+  'auth.signIn': 'Войти',
+  'auth.createAccount': 'Создать аккаунт',
+  'auth.passwordMin': 'Пароль должен содержать минимум 6 символов',
+  'auth.otpSent': 'Мы отправили код подтверждения на',
+  'auth.otpPlaceholder': 'Код подтверждения',
+  'auth.confirm': 'Подтвердить',
+  'auth.alreadyConfirmed': 'Уже подтвердили? Войти',
+
+  // Settings
+  'settings.title': 'Настройки',
+  'settings.theme': 'Тема оформления',
+  'settings.dark': 'Тёмная',
+  'settings.light': 'Светлая',
+  'settings.language': 'Язык интерфейса',
+  'settings.email': 'Email',
+  'settings.currentEmail': 'Текущий:',
+  'settings.newEmail': 'Новый email',
+  'settings.emailSent': 'Ссылка подтверждения отправлена на новый email',
+  'settings.updateEmail': 'Обновить email',
+  'settings.password': 'Пароль',
+  'settings.min6': 'Минимум 6 символов',
+  'settings.noMatch': 'Пароли не совпадают',
+  'settings.newPassword': 'Новый пароль (мин. 6)',
+  'settings.confirmPassword': 'Подтвердите пароль',
+  'settings.updatePassword': 'Обновить пароль',
+  'settings.passwordUpdated': 'Пароль успешно обновлён',
+  'settings.clearChats': 'Очистить все чаты',
+  'settings.clearChatsConfirm': 'Вы уверены? Все чаты будут удалены безвозвратно.',
+  'settings.clearChatsBtn': 'Удалить все чаты',
+  'settings.clearChatsDone': 'Все чаты удалены',
+
+  // Export
+  'export.title': 'Экспорт документа',
+  'export.preview': 'Превью',
+  'export.editor': 'Редактор',
+  'export.hint': 'Markdown: **жирный**, *курсив*, # Заголовок, - список, | таблица |',
+  'export.chars': 'символов',
+  'export.lines': 'строк',
+  'export.cancel': 'Отмена',
+  'export.creating': 'Создание...',
+  'export.downloadPdf': 'Скачать PDF',
+  'export.downloadPptx': 'Скачать PPTX',
+  'export.document': 'Документ',
+
+  // App
+  'app.loadError': 'Не удалось загрузить чаты. Проверьте подключение.',
+  'app.loadErrorShort': 'Не удалось загрузить чаты.',
+  'app.retry': 'Повторить',
+  'app.newChat': 'Новый чат',
+  'app.toggleTheme': 'Переключить тему',
+  'app.toggleSidebar': 'Боковая панель',
+
+  // Voice Chat
+  'voice.title': 'Голосовой чат',
+  'voice.listening': 'Слушаю...',
+  'voice.thinking': 'Думаю...',
+  'voice.speaking': 'Говорю...',
+  'voice.tapToSpeak': 'Нажмите, чтобы говорить',
+  'voice.end': 'Завершить',
+  'voice.you': 'Вы',
+  'voice.noMic': 'Нет доступа к микрофону',
+  'voice.noSpeech': 'Речь не распознана. Попробуйте ещё раз.',
+  'voice.error': 'Ошибка голосового чата',
+
+  // Files
+  'file.tooLarge': 'Файл слишком большой (макс. {size}МБ)',
+  'file.unsupported': 'Неподдерживаемый формат. Используйте PDF, JPG, PNG, GIF или WebP',
+  'file.noText': 'Не удалось извлечь текст из PDF (ни текстовый слой, ни OCR)',
+  'file.extracting': 'Извлечение текста из PDF...',
+  'file.scanOcr': 'Скан-копия. Запуск OCR...',
+  'file.ocrLoading': 'OCR: загрузка модели...',
+  'file.ocrPage': 'OCR: страница {current}/{total}...',
+  'file.ocrRecognizing': 'OCR: распознавание текста...',
+  'file.error': 'Ошибка обработки файла',
+} as const
+
+const en: typeof ru = {
+  'sidebar.newChat': 'New Chat',
+  'sidebar.empty': 'Your chats will appear here',
+  'sidebar.delete': 'Delete',
+  'sidebar.settings': 'Settings',
+  'sidebar.signOut': 'Sign Out',
+  'sidebar.justNow': 'just now',
+  'sidebar.minsAgo': 'min ago',
+  'sidebar.hoursAgo': 'h ago',
+  'sidebar.daysAgo': 'd ago',
+
+  'welcome.subtitle': 'A platform uniting the best AI models. Choose a model and start a conversation.',
+  'welcome.s1': 'Explain the difference between var, let, and const in JavaScript',
+  'welcome.s2': 'Write a poem about the mountains of the Caucasus',
+  'welcome.s3': 'Help me create a business plan for a startup',
+  'welcome.s4': 'Translate text from Russian to English',
+
+  'input.placeholderFiles': 'Add a description or send...',
+  'input.placeholder': 'Message for AI Lumiere...',
+  'input.processing': 'Processing...',
+  'input.hint': 'AI Lumiere may make mistakes. Please verify important information.',
+  'input.attach': 'Attach file',
+  'input.stop': 'Stop',
+  'input.send': 'Send',
+
+  'chat.empty': 'No messages found',
+  'chat.emptyHint': 'Start a conversation by sending a message below',
+
+  'message.you': 'You',
+  'message.export': 'Export',
+
+  'auth.subtitle': 'AI aggregator for the Caucasus, Central Asia & CIS',
+  'auth.verifyTitle': 'Verify your email',
+  'auth.login': 'Sign In',
+  'auth.register': 'Sign Up',
+  'auth.emailPlaceholder': 'Email',
+  'auth.passwordPlaceholder': 'Password',
+  'auth.passwordMinPlaceholder': 'Password (min. 6 characters)',
+  'auth.signIn': 'Sign In',
+  'auth.createAccount': 'Create Account',
+  'auth.passwordMin': 'Password must be at least 6 characters',
+  'auth.otpSent': 'We sent a confirmation code to',
+  'auth.otpPlaceholder': 'Confirmation code',
+  'auth.confirm': 'Confirm',
+  'auth.alreadyConfirmed': 'Already confirmed? Sign in',
+
+  'settings.title': 'Settings',
+  'settings.theme': 'Appearance',
+  'settings.dark': 'Dark',
+  'settings.light': 'Light',
+  'settings.language': 'Interface language',
+  'settings.email': 'Email',
+  'settings.currentEmail': 'Current:',
+  'settings.newEmail': 'New email',
+  'settings.emailSent': 'Confirmation link sent to the new email',
+  'settings.updateEmail': 'Update email',
+  'settings.password': 'Password',
+  'settings.min6': 'Minimum 6 characters',
+  'settings.noMatch': 'Passwords do not match',
+  'settings.newPassword': 'New password (min. 6)',
+  'settings.confirmPassword': 'Confirm password',
+  'settings.updatePassword': 'Update password',
+  'settings.passwordUpdated': 'Password updated successfully',
+  'settings.clearChats': 'Clear all chats',
+  'settings.clearChatsConfirm': 'Are you sure? All chats will be permanently deleted.',
+  'settings.clearChatsBtn': 'Delete all chats',
+  'settings.clearChatsDone': 'All chats deleted',
+
+  'export.title': 'Export Document',
+  'export.preview': 'Preview',
+  'export.editor': 'Editor',
+  'export.hint': 'Markdown: **bold**, *italic*, # Heading, - list, | table |',
+  'export.chars': 'characters',
+  'export.lines': 'lines',
+  'export.cancel': 'Cancel',
+  'export.creating': 'Creating...',
+  'export.downloadPdf': 'Download PDF',
+  'export.downloadPptx': 'Download PPTX',
+  'export.document': 'Document',
+
+  'app.loadError': 'Failed to load chats. Check your connection.',
+  'app.loadErrorShort': 'Failed to load chats.',
+  'app.retry': 'Retry',
+  'app.newChat': 'New Chat',
+  'app.toggleTheme': 'Toggle theme',
+  'app.toggleSidebar': 'Sidebar',
+
+  'voice.title': 'Voice Chat',
+  'voice.listening': 'Listening...',
+  'voice.thinking': 'Thinking...',
+  'voice.speaking': 'Speaking...',
+  'voice.tapToSpeak': 'Tap to speak',
+  'voice.end': 'End call',
+  'voice.you': 'You',
+  'voice.noMic': 'Microphone access denied',
+  'voice.noSpeech': 'No speech detected. Try again.',
+  'voice.error': 'Voice chat error',
+
+  'file.tooLarge': 'File is too large (max {size}MB)',
+  'file.unsupported': 'Unsupported format. Use PDF, JPG, PNG, GIF or WebP',
+  'file.noText': 'Could not extract text from PDF (no text layer or OCR)',
+  'file.extracting': 'Extracting text from PDF...',
+  'file.scanOcr': 'Scanned PDF. Starting OCR...',
+  'file.ocrLoading': 'OCR: loading model...',
+  'file.ocrPage': 'OCR: page {current}/{total}...',
+  'file.ocrRecognizing': 'OCR: recognizing text...',
+  'file.error': 'File processing error',
+}
+
+const kz: typeof ru = {
+  'sidebar.newChat': 'Жаңа чат',
+  'sidebar.empty': 'Сіздің чаттарыңыз осында пайда болады',
+  'sidebar.delete': 'Жою',
+  'sidebar.settings': 'Баптаулар',
+  'sidebar.signOut': 'Шығу',
+  'sidebar.justNow': 'жаңа ғана',
+  'sidebar.minsAgo': 'мин. бұрын',
+  'sidebar.hoursAgo': 'сағ. бұрын',
+  'sidebar.daysAgo': 'күн бұрын',
+
+  'welcome.subtitle': 'Ең үздік ЖИ модельдерін біріктіретін платформа. Модельді таңдап, диалог бастаңыз.',
+  'welcome.s1': 'JavaScript-тегі var, let және const айырмашылығын түсіндір',
+  'welcome.s2': 'Кавказ тауларын жыр ет',
+  'welcome.s3': 'Стартап үшін бизнес-жоспар жасауға көмектес',
+  'welcome.s4': 'Мәтінді орыс тілінен ағылшын тіліне аудар',
+
+  'input.placeholderFiles': 'Сипаттама қосыңыз немесе жіберіңіз...',
+  'input.placeholder': 'AI Lumiere-ге хабарлама...',
+  'input.processing': 'Өңдеу...',
+  'input.hint': 'AI Lumiere қате жіберуі мүмкін. Маңызды ақпаратты тексеріңіз.',
+  'input.attach': 'Файл тіркеу',
+  'input.stop': 'Тоқтату',
+  'input.send': 'Жіберу',
+
+  'chat.empty': 'Хабарламалар табылмады',
+  'chat.emptyHint': 'Төменде хабарлама жіберіп, диалог бастаңыз',
+
+  'message.you': 'Сіз',
+  'message.export': 'Экспорт',
+
+  'auth.subtitle': 'Кавказ, Орталық Азия және ТМД-ға арналған ЖИ агрегаторы',
+  'auth.verifyTitle': 'Электрондық поштаңызды растаңыз',
+  'auth.login': 'Кіру',
+  'auth.register': 'Тіркелу',
+  'auth.emailPlaceholder': 'Email',
+  'auth.passwordPlaceholder': 'Құпия сөз',
+  'auth.passwordMinPlaceholder': 'Құпия сөз (кем. 6 таңба)',
+  'auth.signIn': 'Кіру',
+  'auth.createAccount': 'Тіркелу',
+  'auth.passwordMin': 'Құпия сөз кемінде 6 таңбадан тұруы керек',
+  'auth.otpSent': 'Растау коды жіберілді:',
+  'auth.otpPlaceholder': 'Растау коды',
+  'auth.confirm': 'Растау',
+  'auth.alreadyConfirmed': 'Растадыңыз ба? Кіру',
+
+  'settings.title': 'Баптаулар',
+  'settings.theme': 'Тақырып',
+  'settings.dark': 'Қараңғы',
+  'settings.light': 'Жарық',
+  'settings.language': 'Интерфейс тілі',
+  'settings.email': 'Email',
+  'settings.currentEmail': 'Ағымдағы:',
+  'settings.newEmail': 'Жаңа email',
+  'settings.emailSent': 'Растау сілтемесі жаңа email-ге жіберілді',
+  'settings.updateEmail': 'Email жаңарту',
+  'settings.password': 'Құпия сөз',
+  'settings.min6': 'Кемінде 6 таңба',
+  'settings.noMatch': 'Құпия сөздер сәйкес келмейді',
+  'settings.newPassword': 'Жаңа құпия сөз (кем. 6)',
+  'settings.confirmPassword': 'Құпия сөзді растаңыз',
+  'settings.updatePassword': 'Құпия сөзді жаңарту',
+  'settings.passwordUpdated': 'Құпия сөз сәтті жаңартылды',
+  'settings.clearChats': 'Барлық чаттарды тазалау',
+  'settings.clearChatsConfirm': 'Сенімдісіз бе? Барлық чаттар біржола жойылады.',
+  'settings.clearChatsBtn': 'Барлық чаттарды жою',
+  'settings.clearChatsDone': 'Барлық чаттар жойылды',
+
+  'export.title': 'Құжатты экспорттау',
+  'export.preview': 'Алдын ала қарау',
+  'export.editor': 'Редактор',
+  'export.hint': 'Markdown: **қалың**, *көлбеу*, # Тақырып, - тізім, | кесте |',
+  'export.chars': 'таңба',
+  'export.lines': 'жол',
+  'export.cancel': 'Болдырмау',
+  'export.creating': 'Жасалуда...',
+  'export.downloadPdf': 'PDF жүктеу',
+  'export.downloadPptx': 'PPTX жүктеу',
+  'export.document': 'Құжат',
+
+  'app.loadError': 'Чаттарды жүктеу мүмкін болмады. Қосылымды тексеріңіз.',
+  'app.loadErrorShort': 'Чаттарды жүктеу мүмкін болмады.',
+  'app.retry': 'Қайталау',
+  'app.newChat': 'Жаңа чат',
+  'app.toggleTheme': 'Тақырыпты ауыстыру',
+  'app.toggleSidebar': 'Бүйір панелі',
+
+  'voice.title': 'Дауыстық чат',
+  'voice.listening': 'Тыңдап жатырмын...',
+  'voice.thinking': 'Ойланып жатырмын...',
+  'voice.speaking': 'Сөйлеп жатырмын...',
+  'voice.tapToSpeak': 'Сөйлеу үшін басыңыз',
+  'voice.end': 'Аяқтау',
+  'voice.you': 'Сіз',
+  'voice.noMic': 'Микрофонға рұқсат жоқ',
+  'voice.noSpeech': 'Сөз танылмады. Қайталап көріңіз.',
+  'voice.error': 'Дауыстық чат қатесі',
+
+  'file.tooLarge': 'Файл тым үлкен (макс. {size}МБ)',
+  'file.unsupported': 'Қолдау көрсетілмейтін формат. PDF, JPG, PNG, GIF немесе WebP пайдаланыңыз',
+  'file.noText': 'PDF-тен мәтін алу мүмкін болмады (мәтіндік қабат та, OCR де жоқ)',
+  'file.extracting': 'PDF-тен мәтін алынуда...',
+  'file.scanOcr': 'Сканерленген көшірме. OCR іске қосылуда...',
+  'file.ocrLoading': 'OCR: модель жүктелуде...',
+  'file.ocrPage': 'OCR: бет {current}/{total}...',
+  'file.ocrRecognizing': 'OCR: мәтін танылуда...',
+  'file.error': 'Файлды өңдеу қатесі',
+}
+
+export type TranslationKey = keyof typeof ru
+type Translations = Record<TranslationKey, string>
+
+const translations: Record<Lang, Translations> = { ru, en, kz }
+
+export function getTranslations(lang: Lang): Translations {
+  return translations[lang]
+}
+
+export function t(lang: Lang, key: TranslationKey, vars?: Record<string, string | number>): string {
+  let str = translations[lang][key] || translations.ru[key] || key
+  if (vars) {
+    for (const [k, v] of Object.entries(vars)) {
+      str = str.replace(`{${k}}`, String(v))
+    }
+  }
+  return str
+}

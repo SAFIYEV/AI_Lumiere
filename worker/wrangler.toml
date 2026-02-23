@@ -1,0 +1,7 @@
+name = "ai-lumiere-api"
+main = "worker.js"
+compatibility_date = "2024-12-01"
+
+# After first deploy, run:
+# npx wrangler secret put GROQ_API_KEY
+# Then paste your key — it will be stored encrypted in Cloudflare
