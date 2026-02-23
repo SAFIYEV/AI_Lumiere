@@ -16,7 +16,7 @@ export default function WelcomeScreen({ onSuggestionClick }: Props) {
 
   return (
     <div className="welcome">
-      <img src="/logo.jpg" alt="AI Lumiere" className="welcome__logo-img" />
+      <img src={`${import.meta.env.BASE_URL}logo.jpg`} alt="AI Lumiere" className="welcome__logo-img" />
       <h1 className="welcome__title">AI Lumiere</h1>
       <p className="welcome__subtitle">{t('welcome.subtitle')}</p>
       <div className="welcome__suggestions">

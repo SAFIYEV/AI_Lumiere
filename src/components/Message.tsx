@@ -11,6 +11,12 @@ import { formatFileSize } from '../lib/fileProcessor'
 import { useLang } from '../contexts/LangContext'
 import ExportPreview from './ExportPreview'
 
+function normalizeMath(text: string): string {
+  text = text.replace(/\\\[\s*([\s\S]*?)\s*\\\]/g, (_m, inner) => `$$\n${inner.trim()}\n$$`)
+  text = text.replace(/\\\(\s*([\s\S]*?)\s*\\\)/g, (_m, inner) => `$${inner.trim()}$`)
+  return text
+}
+
 function cleanContent(raw: string): string {
   const codeBlocks: string[] = []
   let text = raw.replace(/```[\s\S]*?```/g, (match) => {
@@ -22,6 +28,9 @@ function cleanContent(raw: string): string {
     inlineCodes.push(match)
     return `\x00IC${inlineCodes.length - 1}\x00`
   })
+
+  text = normalizeMath(text)
+
   const mathBlocks: string[] = []
   text = text.replace(/\$\$[\s\S]*?\$\$/g, (match) => {
     mathBlocks.push(match)
@@ -186,7 +195,8 @@ function StreamingContent({ content }: { content: string }) {
 function StreamingTextBlock({ text }: { text: string }) {
   const html = useMemo(() => {
     const mathHolders: string[] = []
-    let safe = text.replace(/\$\$[\s\S]*?\$\$/g, (m) => {
+    let safe = normalizeMath(text)
+    safe = safe.replace(/\$\$[\s\S]*?\$\$/g, (m) => {
       mathHolders.push(`<span class="streaming-math">${m}</span>`)
       return `\x00MH${mathHolders.length - 1}\x00`
     })

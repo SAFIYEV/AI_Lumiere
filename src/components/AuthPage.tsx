@@ -87,7 +87,7 @@ export default function AuthPage() {
         </div>
 
         <div className="auth__brand">
-          <img src="/logo.jpg" alt="AI Lumiere" className="auth__logo-img" />
+          <img src={`${import.meta.env.BASE_URL}logo.jpg`} alt="AI Lumiere" className="auth__logo-img" />
           <h1 className="auth__title">AI Lumiere</h1>
           <p className="auth__subtitle">
             {view === 'verify' ? t('auth.verifyTitle') : t('auth.subtitle')}
