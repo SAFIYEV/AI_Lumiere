@@ -132,7 +132,7 @@ const ru = {
   'file.error': 'Ошибка обработки файла',
 } as const
 
-const en: typeof ru = {
+const en: Record<keyof typeof ru, string> = {
   'sidebar.newChat': 'New Chat',
   'sidebar.empty': 'Your chats will appear here',
   'sidebar.delete': 'Delete',
@@ -241,7 +241,7 @@ const en: typeof ru = {
   'file.error': 'File processing error',
 }
 
-const kz: typeof ru = {
+const kz: Record<keyof typeof ru, string> = {
   'sidebar.newChat': 'Жаңа чат',
   'sidebar.empty': 'Сіздің чаттарыңыз осында пайда болады',
   'sidebar.delete': 'Жою',
