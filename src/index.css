@@ -1542,6 +1542,34 @@ a {
   transition: color var(--transition), background var(--transition), transform var(--transition);
 }
 
+.input-area__camera {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: color var(--transition), background var(--transition), transform var(--transition);
+}
+
+.input-area__camera:hover:not(:disabled) {
+  color: var(--accent);
+  background: var(--accent-dim);
+  transform: scale(1.08);
+}
+
+.input-area__camera:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.input-area__camera:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
 .input-area__attach:hover:not(:disabled) {
   color: var(--accent);
   background: var(--accent-dim);
@@ -2567,6 +2595,7 @@ a {
   }
 
   .input-area__attach,
+  .input-area__camera,
   .input-area__send,
   .input-area__stop,
   .input-area__mic {
@@ -2671,6 +2700,7 @@ a {
   }
 
   .input-area__attach,
+  .input-area__camera,
   .input-area__send,
   .input-area__stop,
   .input-area__mic {
@@ -2883,6 +2913,7 @@ a {
   }
 
   .input-area__attach,
+  .input-area__camera,
   .input-area__send,
   .input-area__stop,
   .input-area__mic {
@@ -2910,6 +2941,12 @@ a {
   .message__avatar {
     width: 24px;
     height: 24px;
+  }
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .input-area__camera {
+    display: flex;
   }
 }
 

@@ -51,7 +51,9 @@ function ChatApp() {
   const [selectedModel, setSelectedModel] = useState(
     () => localStorage.getItem(MODEL_KEY) || 'openai/gpt-oss-120b'
   )
-  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [sidebarOpen, setSidebarOpen] = useState(() =>
+    typeof window !== 'undefined' ? window.innerWidth > 768 : true
+  )
   const [isStreaming, setIsStreaming] = useState(false)
   const [dbLoading, setDbLoading] = useState(true)
   const [dbError, setDbError] = useState<string | null>(null)
@@ -117,13 +119,28 @@ function ChatApp() {
     []
   )
 
+  const closeSidebarOnMobile = useCallback(() => {
+    if (typeof window !== 'undefined' && window.matchMedia('(max-width: 768px)').matches) {
+      setSidebarOpen(false)
+    }
+  }, [])
+
   const handleNewChat = useCallback(() => {
     if (isStreaming) {
       abortRef.current?.abort()
       setIsStreaming(false)
     }
     setActiveId(null)
-  }, [isStreaming])
+    closeSidebarOnMobile()
+  }, [isStreaming, closeSidebarOnMobile])
+
+  const handleSelectConversation = useCallback(
+    (id: string) => {
+      setActiveId(id)
+      closeSidebarOnMobile()
+    },
+    [closeSidebarOnMobile]
+  )
 
   const handleDeleteConversation = useCallback(
     (id: string) => {
@@ -329,7 +346,7 @@ function ChatApp() {
       <Sidebar
         conversations={conversations}
         activeId={activeId}
-        onSelect={setActiveId}
+        onSelect={handleSelectConversation}
         onNewChat={handleNewChat}
         onDelete={handleDeleteConversation}
         userEmail={user?.email}

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback, type KeyboardEvent } from 'react'
-import { ArrowUp, Square, Paperclip, X, FileText, Image as ImageIcon, Mic, Loader2 } from 'lucide-react'
+import { ArrowUp, Square, Paperclip, Camera, X, FileText, Image as ImageIcon, Mic, Loader2 } from 'lucide-react'
 import type { FileAttachment } from '../types'
 import { processFile, formatFileSize } from '../lib/fileProcessor'
 import { useLang } from '../contexts/LangContext'
@@ -13,6 +13,7 @@ interface Props {
 }
 
 const ACCEPT = 'image/jpeg,image/png,image/gif,image/webp,application/pdf'
+const CAMERA_ACCEPT = 'image/*'
 
 function blobToBase64(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -79,6 +80,24 @@ export default function InputArea({ onSend, isStreaming, onStop }: Props) {
     input.type = 'file'
     input.accept = ACCEPT
     input.multiple = true
+    input.style.display = 'none'
+    document.body.appendChild(input)
+    input.addEventListener('change', () => {
+      if (input.files?.length) {
+        addFiles(Array.from(input.files))
+      }
+      document.body.removeChild(input)
+    })
+    input.click()
+  }, [isStreaming, processing, addFiles])
+
+  const handleCameraClick = useCallback(() => {
+    if (isStreaming || processing) return
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.accept = CAMERA_ACCEPT
+    input.capture = 'environment'
+    input.multiple = false
     input.style.display = 'none'
     document.body.appendChild(input)
     input.addEventListener('change', () => {
@@ -308,6 +327,16 @@ export default function InputArea({ onSend, isStreaming, onStop }: Props) {
           aria-label={t('input.attach')}
         >
           <Paperclip size={18} />
+        </button>
+
+        <button
+          type="button"
+          className="input-area__camera"
+          onClick={handleCameraClick}
+          disabled={isStreaming || processing}
+          aria-label={t('input.camera')}
+        >
+          <Camera size={18} />
         </button>
 
         <textarea

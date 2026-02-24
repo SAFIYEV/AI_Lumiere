@@ -37,6 +37,7 @@ const ru = {
   'input.processing': 'Обработка...',
   'input.hint': 'AI Lumiere может допускать ошибки. Проверяйте важную информацию.',
   'input.attach': 'Прикрепить файл',
+  'input.camera': 'Сделать фото',
   'input.stop': 'Остановить',
   'input.send': 'Отправить',
 
@@ -154,6 +155,7 @@ const en: Record<keyof typeof ru, string> = {
   'input.processing': 'Processing...',
   'input.hint': 'AI Lumiere may make mistakes. Please verify important information.',
   'input.attach': 'Attach file',
+  'input.camera': 'Take photo',
   'input.stop': 'Stop',
   'input.send': 'Send',
 
@@ -263,6 +265,7 @@ const kz: Record<keyof typeof ru, string> = {
   'input.processing': 'Өңдеу...',
   'input.hint': 'AI Lumiere қате жіберуі мүмкін. Маңызды ақпаратты тексеріңіз.',
   'input.attach': 'Файл тіркеу',
+  'input.camera': 'Фото түсіру',
   'input.stop': 'Тоқтату',
   'input.send': 'Жіберу',
 
