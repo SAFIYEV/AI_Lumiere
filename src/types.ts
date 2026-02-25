@@ -29,6 +29,16 @@ export interface Conversation {
   createdAt: string
 }
 
+export interface UserBot {
+  id: string
+  name: string
+  description: string
+  model: string
+  systemPrompt: string
+  createdAt: string
+  updatedAt: string
+}
+
 export interface ModelInfo {
   id: string
   name: string

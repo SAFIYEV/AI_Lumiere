@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import type { Conversation, Message, FileAttachment } from './types'
+import type { Conversation, Message, FileAttachment, UserBot } from './types'
 import { MODELS } from './types'
 import { streamChat } from './api'
 import * as db from './lib/database'
@@ -10,12 +10,14 @@ import Sidebar from './components/Sidebar'
 import Chat from './components/Chat'
 import WelcomeScreen from './components/WelcomeScreen'
 import ModelSelector from './components/ModelSelector'
+import BotSelector from './components/BotSelector'
 import InputArea from './components/InputArea'
 import Settings from './components/Settings'
 import { PanelLeftClose, PanelLeft, Sparkles, Sun, Moon } from 'lucide-react'
 
 const MODEL_KEY = 'ai-lumiere-model'
 const THEME_KEY = 'ai-lumiere-theme'
+const BOT_KEY = 'ai-lumiere-selected-bot'
 
 export default function App() {
   return (
@@ -51,6 +53,10 @@ function ChatApp() {
   const [selectedModel, setSelectedModel] = useState(
     () => localStorage.getItem(MODEL_KEY) || 'openai/gpt-oss-120b'
   )
+  const [bots, setBots] = useState<UserBot[]>([])
+  const [selectedBotId, setSelectedBotId] = useState<string | null>(
+    () => localStorage.getItem(BOT_KEY) || null
+  )
   const [sidebarOpen, setSidebarOpen] = useState(() =>
     typeof window !== 'undefined' ? window.innerWidth > 768 : true
   )
@@ -67,6 +73,8 @@ function ChatApp() {
   const pendingFlushRef = useRef<{ convId: string; msgId: string } | null>(null)
   const conversationsRef = useRef(conversations)
   conversationsRef.current = conversations
+  const botsRef = useRef(bots)
+  botsRef.current = bots
 
   const flushStreamContent = useCallback(() => {
     const pending = pendingFlushRef.current
@@ -89,6 +97,7 @@ function ChatApp() {
 
   const activeConversation =
     conversations.find((c) => c.id === activeId) ?? null
+  const selectedBot = bots.find((b) => b.id === selectedBotId) || null
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
@@ -108,11 +117,29 @@ function ChatApp() {
         setDbError(t('app.loadError'))
         setDbLoading(false)
       })
+
+    db.loadBots(user.id)
+      .then((list) => setBots(list))
+      .catch((err) => {
+        console.error('[AI Lumiere] Bots load error:', err)
+        setBots([])
+      })
   }, [user])
 
   useEffect(() => {
     localStorage.setItem(MODEL_KEY, selectedModel)
   }, [selectedModel])
+
+  useEffect(() => {
+    if (selectedBotId) localStorage.setItem(BOT_KEY, selectedBotId)
+    else localStorage.removeItem(BOT_KEY)
+  }, [selectedBotId])
+
+  useEffect(() => {
+    if (selectedBotId && !bots.some((b) => b.id === selectedBotId)) {
+      setSelectedBotId(null)
+    }
+  }, [bots, selectedBotId])
 
   const toggleTheme = useCallback(
     () => setTheme((prev) => (prev === 'dark' ? 'light' : 'dark')),
@@ -184,11 +211,41 @@ function ChatApp() {
       })
   }, [user, t])
 
+  const handleCreateBot = useCallback(
+    async (draft: Pick<UserBot, 'name' | 'description' | 'model' | 'systemPrompt'>) => {
+      if (!user) return
+      const created = await db.createBot(user.id, draft)
+      setBots((prev) => [created, ...prev])
+      setSelectedBotId(created.id)
+    },
+    [user]
+  )
+
+  const handleUpdateBot = useCallback(
+    async (id: string, draft: Pick<UserBot, 'name' | 'description' | 'model' | 'systemPrompt'>) => {
+      const updated = await db.updateBot(id, draft)
+      setBots((prev) => prev.map((b) => (b.id === id ? updated : b)))
+    },
+    []
+  )
+
+  const handleDeleteBot = useCallback(
+    async (id: string) => {
+      await db.deleteBot(id)
+      setBots((prev) => prev.filter((b) => b.id !== id))
+      if (selectedBotId === id) setSelectedBotId(null)
+    },
+    [selectedBotId]
+  )
+
   const handleSend = useCallback(
     async (content: string, files?: FileAttachment[]) => {
       if (isStreaming || (!content.trim() && !files?.length) || !user) return
 
-      const model = selectedModel
+      const activeBot = selectedBotId
+        ? botsRef.current.find((b) => b.id === selectedBotId) || null
+        : null
+      const model = activeBot?.model || selectedModel
       let convId = activeId
       let prevMessages: Message[] = []
 
@@ -255,6 +312,9 @@ function ChatApp() {
       streamContentRef.current = ''
 
       const apiMessages = [
+        ...(activeBot?.systemPrompt.trim()
+          ? [{ role: 'system' as const, content: activeBot.systemPrompt.trim() }]
+          : []),
         ...prevMessages.map((m) => ({
           role: m.role,
           content: m.content,
@@ -325,7 +385,7 @@ function ChatApp() {
         ctrl.signal
       )
     },
-    [isStreaming, selectedModel, activeId, user, t]
+    [isStreaming, selectedModel, selectedBotId, activeId, user, t]
   )
 
   const handleStop = useCallback(() => {
@@ -367,10 +427,28 @@ function ChatApp() {
               <PanelLeft size={20} />
             )}
           </button>
-          <ModelSelector
-            selected={selectedModel}
-            onChange={setSelectedModel}
+          <BotSelector
+            bots={bots}
+            selectedBotId={selectedBotId}
+            onSelect={setSelectedBotId}
+            onCreate={handleCreateBot}
+            onUpdate={handleUpdateBot}
+            onDelete={handleDeleteBot}
           />
+          {selectedBot ? (
+            <button
+              className="model-selector__trigger"
+              disabled
+              title={t('bots.modelLocked')}
+            >
+              {MODELS.find((m) => m.id === selectedBot.model)?.name || selectedBot.model}
+            </button>
+          ) : (
+            <ModelSelector
+              selected={selectedModel}
+              onChange={setSelectedModel}
+            />
+          )}
           <div className="main__header-right">
             <button
               className="icon-btn"

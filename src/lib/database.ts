@@ -1,5 +1,5 @@
 import { supabase } from './supabase'
-import type { Conversation, Message } from '../types'
+import type { Conversation, Message, UserBot } from '../types'
 
 async function retry<T>(fn: () => Promise<T>, attempts = 3, delay = 500): Promise<T> {
   for (let i = 0; i < attempts; i++) {
@@ -103,4 +103,88 @@ export async function updateMessageContent(
       .eq('id', id)
     if (error) throw error
   })
+}
+
+export async function loadBots(userId: string): Promise<UserBot[]> {
+  const { data, error } = await supabase
+    .from('chat_bots')
+    .select('id, name, description, model, system_prompt, created_at, updated_at')
+    .eq('user_id', userId)
+    .order('updated_at', { ascending: false })
+
+  if (error) throw error
+
+  return (data || []).map((row) => ({
+    id: row.id as string,
+    name: row.name as string,
+    description: (row.description as string) || '',
+    model: row.model as string,
+    systemPrompt: (row.system_prompt as string) || '',
+    createdAt: row.created_at as string,
+    updatedAt: row.updated_at as string,
+  }))
+}
+
+export async function createBot(
+  userId: string,
+  payload: Pick<UserBot, 'name' | 'description' | 'model' | 'systemPrompt'>
+): Promise<UserBot> {
+  const { data, error } = await supabase
+    .from('chat_bots')
+    .insert({
+      user_id: userId,
+      name: payload.name,
+      description: payload.description,
+      model: payload.model,
+      system_prompt: payload.systemPrompt,
+    })
+    .select('id, name, description, model, system_prompt, created_at, updated_at')
+    .single()
+
+  if (error) throw error
+
+  return {
+    id: data.id as string,
+    name: data.name as string,
+    description: (data.description as string) || '',
+    model: data.model as string,
+    systemPrompt: (data.system_prompt as string) || '',
+    createdAt: data.created_at as string,
+    updatedAt: data.updated_at as string,
+  }
+}
+
+export async function updateBot(
+  id: string,
+  payload: Pick<UserBot, 'name' | 'description' | 'model' | 'systemPrompt'>
+): Promise<UserBot> {
+  const { data, error } = await supabase
+    .from('chat_bots')
+    .update({
+      name: payload.name,
+      description: payload.description,
+      model: payload.model,
+      system_prompt: payload.systemPrompt,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', id)
+    .select('id, name, description, model, system_prompt, created_at, updated_at')
+    .single()
+
+  if (error) throw error
+
+  return {
+    id: data.id as string,
+    name: data.name as string,
+    description: (data.description as string) || '',
+    model: data.model as string,
+    systemPrompt: (data.system_prompt as string) || '',
+    createdAt: data.created_at as string,
+    updatedAt: data.updated_at as string,
+  }
+}
+
+export async function deleteBot(id: string): Promise<void> {
+  const { error } = await supabase.from('chat_bots').delete().eq('id', id)
+  if (error) throw error
 }

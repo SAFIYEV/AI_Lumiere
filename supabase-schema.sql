@@ -26,9 +26,24 @@ CREATE TABLE messages (
 
 CREATE INDEX idx_messages_conversation ON messages(conversation_id);
 
+-- 3. User chat bots table (custom personas)
+CREATE TABLE chat_bots (
+  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id       UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  name          TEXT NOT NULL,
+  description   TEXT NOT NULL DEFAULT '',
+  model         TEXT NOT NULL,
+  system_prompt TEXT NOT NULL DEFAULT '',
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_chat_bots_user ON chat_bots(user_id);
+
 -- 3. Enable Row Level Security
 ALTER TABLE conversations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE messages      ENABLE ROW LEVEL SECURITY;
+ALTER TABLE chat_bots     ENABLE ROW LEVEL SECURITY;
 
 -- 4. RLS Policies — conversations
 CREATE POLICY "Users can view own conversations"
@@ -61,3 +76,20 @@ CREATE POLICY "Users can update messages in own conversations"
   USING (conversation_id IN (
     SELECT id FROM conversations WHERE user_id = auth.uid()
   ));
+
+-- 6. RLS Policies — chat_bots
+CREATE POLICY "Users can view own bots"
+  ON chat_bots FOR SELECT
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can create own bots"
+  ON chat_bots FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own bots"
+  ON chat_bots FOR UPDATE
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete own bots"
+  ON chat_bots FOR DELETE
+  USING (auth.uid() = user_id);
