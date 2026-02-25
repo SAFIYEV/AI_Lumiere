@@ -31,14 +31,18 @@ CREATE TABLE chat_bots (
   id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id       UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   name          TEXT NOT NULL,
+  slug          TEXT NOT NULL UNIQUE,
+  author_name   TEXT NOT NULL DEFAULT '',
   description   TEXT NOT NULL DEFAULT '',
   model         TEXT NOT NULL,
   system_prompt TEXT NOT NULL DEFAULT '',
+  is_public     BOOLEAN NOT NULL DEFAULT false,
   created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at    TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE INDEX idx_chat_bots_user ON chat_bots(user_id);
+CREATE INDEX idx_chat_bots_public ON chat_bots(is_public, updated_at DESC);
 
 -- 3. Enable Row Level Security
 ALTER TABLE conversations ENABLE ROW LEVEL SECURITY;
@@ -78,9 +82,9 @@ CREATE POLICY "Users can update messages in own conversations"
   ));
 
 -- 6. RLS Policies — chat_bots
-CREATE POLICY "Users can view own bots"
+CREATE POLICY "Users can view own bots or public bots"
   ON chat_bots FOR SELECT
-  USING (auth.uid() = user_id);
+  USING (auth.uid() = user_id OR is_public = true);
 
 CREATE POLICY "Users can create own bots"
   ON chat_bots FOR INSERT

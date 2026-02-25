@@ -13,6 +13,31 @@ async function retry<T>(fn: () => Promise<T>, attempts = 3, delay = 500): Promis
   throw new Error('Retry exhausted')
 }
 
+function slugify(input: string): string {
+  return input
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '')
+    .slice(0, 48)
+}
+
+function mapBotRow(row: Record<string, unknown>): UserBot {
+  return {
+    id: row.id as string,
+    userId: row.user_id as string,
+    name: row.name as string,
+    slug: row.slug as string,
+    authorName: (row.author_name as string) || '',
+    description: (row.description as string) || '',
+    model: row.model as string,
+    systemPrompt: (row.system_prompt as string) || '',
+    isPublic: Boolean(row.is_public),
+    createdAt: row.created_at as string,
+    updatedAt: row.updated_at as string,
+  }
+}
+
 export async function loadConversations(userId: string): Promise<Conversation[]> {
   const { data: convRows, error: convError } = await supabase
     .from('conversations')
@@ -108,83 +133,89 @@ export async function updateMessageContent(
 export async function loadBots(userId: string): Promise<UserBot[]> {
   const { data, error } = await supabase
     .from('chat_bots')
-    .select('id, name, description, model, system_prompt, created_at, updated_at')
+    .select('id, user_id, name, slug, author_name, description, model, system_prompt, is_public, created_at, updated_at')
     .eq('user_id', userId)
     .order('updated_at', { ascending: false })
 
   if (error) throw error
 
-  return (data || []).map((row) => ({
-    id: row.id as string,
-    name: row.name as string,
-    description: (row.description as string) || '',
-    model: row.model as string,
-    systemPrompt: (row.system_prompt as string) || '',
-    createdAt: row.created_at as string,
-    updatedAt: row.updated_at as string,
-  }))
+  return (data || []).map((row) => mapBotRow(row as unknown as Record<string, unknown>))
 }
 
 export async function createBot(
   userId: string,
-  payload: Pick<UserBot, 'name' | 'description' | 'model' | 'systemPrompt'>
+  payload: Pick<UserBot, 'name' | 'description' | 'model' | 'systemPrompt' | 'authorName' | 'isPublic'>
 ): Promise<UserBot> {
+  const baseSlug = slugify(payload.name) || `bot-${Math.floor(Date.now() / 1000)}`
+  const slug = `${baseSlug}-${Math.random().toString(36).slice(2, 7)}`
   const { data, error } = await supabase
     .from('chat_bots')
     .insert({
       user_id: userId,
       name: payload.name,
+      slug,
+      author_name: payload.authorName,
       description: payload.description,
       model: payload.model,
       system_prompt: payload.systemPrompt,
+      is_public: payload.isPublic,
     })
-    .select('id, name, description, model, system_prompt, created_at, updated_at')
+    .select('id, user_id, name, slug, author_name, description, model, system_prompt, is_public, created_at, updated_at')
     .single()
 
   if (error) throw error
-
-  return {
-    id: data.id as string,
-    name: data.name as string,
-    description: (data.description as string) || '',
-    model: data.model as string,
-    systemPrompt: (data.system_prompt as string) || '',
-    createdAt: data.created_at as string,
-    updatedAt: data.updated_at as string,
-  }
+  return mapBotRow(data as unknown as Record<string, unknown>)
 }
 
 export async function updateBot(
   id: string,
-  payload: Pick<UserBot, 'name' | 'description' | 'model' | 'systemPrompt'>
+  payload: Pick<UserBot, 'name' | 'description' | 'model' | 'systemPrompt' | 'authorName' | 'isPublic'>
 ): Promise<UserBot> {
   const { data, error } = await supabase
     .from('chat_bots')
     .update({
       name: payload.name,
+      author_name: payload.authorName,
       description: payload.description,
       model: payload.model,
       system_prompt: payload.systemPrompt,
+      is_public: payload.isPublic,
       updated_at: new Date().toISOString(),
     })
     .eq('id', id)
-    .select('id, name, description, model, system_prompt, created_at, updated_at')
+    .select('id, user_id, name, slug, author_name, description, model, system_prompt, is_public, created_at, updated_at')
     .single()
 
   if (error) throw error
-
-  return {
-    id: data.id as string,
-    name: data.name as string,
-    description: (data.description as string) || '',
-    model: data.model as string,
-    systemPrompt: (data.system_prompt as string) || '',
-    createdAt: data.created_at as string,
-    updatedAt: data.updated_at as string,
-  }
+  return mapBotRow(data as unknown as Record<string, unknown>)
 }
 
 export async function deleteBot(id: string): Promise<void> {
   const { error } = await supabase.from('chat_bots').delete().eq('id', id)
   if (error) throw error
+}
+
+export async function loadPublicBots(limit = 100): Promise<UserBot[]> {
+  const { data, error } = await supabase
+    .from('chat_bots')
+    .select('id, user_id, name, slug, author_name, description, model, system_prompt, is_public, created_at, updated_at')
+    .eq('is_public', true)
+    .order('updated_at', { ascending: false })
+    .limit(limit)
+
+  if (error) throw error
+  return (data || []).map((row) => mapBotRow(row as unknown as Record<string, unknown>))
+}
+
+export async function loadPublicBotBySlug(slug: string): Promise<UserBot | null> {
+  const { data, error } = await supabase
+    .from('chat_bots')
+    .select('id, user_id, name, slug, author_name, description, model, system_prompt, is_public, created_at, updated_at')
+    .eq('slug', slug)
+    .eq('is_public', true)
+    .maybeSingle()
+
+  if (error) throw error
+  if (!data) return null
+  return mapBotRow(data as unknown as Record<string, unknown>)
 }

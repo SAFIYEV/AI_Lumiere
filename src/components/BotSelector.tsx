@@ -5,34 +5,42 @@ import { useLang } from '../contexts/LangContext'
 
 type BotDraft = {
   name: string
+  authorName: string
   description: string
   model: string
   systemPrompt: string
+  isPublic: boolean
 }
 
 interface Props {
   bots: UserBot[]
+  publicBots: UserBot[]
   selectedBotId: string | null
   onSelect: (id: string | null) => void
   onCreate: (draft: BotDraft) => Promise<void>
   onUpdate: (id: string, draft: BotDraft) => Promise<void>
   onDelete: (id: string) => Promise<void>
+  onClonePublic: (bot: UserBot) => Promise<void>
 }
 
 const emptyDraft = (fallbackModel: string): BotDraft => ({
   name: '',
+  authorName: '',
   description: '',
   model: fallbackModel,
   systemPrompt: '',
+  isPublic: false,
 })
 
 export default function BotSelector({
   bots,
+  publicBots,
   selectedBotId,
   onSelect,
   onCreate,
   onUpdate,
   onDelete,
+  onClonePublic,
 }: Props) {
   const { t } = useLang()
   const [open, setOpen] = useState(false)
@@ -115,10 +123,12 @@ export default function BotSelector({
       {manageOpen && (
         <BotManagerModal
           bots={bots}
+          publicBots={publicBots}
           onClose={() => setManageOpen(false)}
           onCreate={onCreate}
           onUpdate={onUpdate}
           onDelete={onDelete}
+          onClonePublic={onClonePublic}
         />
       )}
     </>
@@ -127,16 +137,20 @@ export default function BotSelector({
 
 function BotManagerModal({
   bots,
+  publicBots,
   onClose,
   onCreate,
   onUpdate,
   onDelete,
+  onClonePublic,
 }: {
   bots: UserBot[]
+  publicBots: UserBot[]
   onClose: () => void
   onCreate: (draft: BotDraft) => Promise<void>
   onUpdate: (id: string, draft: BotDraft) => Promise<void>
   onDelete: (id: string) => Promise<void>
+  onClonePublic: (bot: UserBot) => Promise<void>
 }) {
   const { t } = useLang()
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -154,9 +168,11 @@ function BotManagerModal({
     setEditingId(bot.id)
     setDraft({
       name: bot.name,
+      authorName: bot.authorName,
       description: bot.description,
       model: bot.model,
       systemPrompt: bot.systemPrompt,
+      isPublic: bot.isPublic,
     })
     setError('')
   }
@@ -280,6 +296,16 @@ function BotManagerModal({
             <label className="settings__field">
               <input
                 type="text"
+                placeholder={t('bots.authorName')}
+                value={draft.authorName}
+                onChange={(e) => setDraft((prev) => ({ ...prev, authorName: e.target.value }))}
+                maxLength={64}
+              />
+            </label>
+
+            <label className="settings__field">
+              <input
+                type="text"
                 placeholder={t('bots.description')}
                 value={draft.description}
                 onChange={(e) => setDraft((prev) => ({ ...prev, description: e.target.value }))}
@@ -309,12 +335,77 @@ function BotManagerModal({
               rows={6}
             />
 
+            <label className="bots-settings__checkbox">
+              <input
+                type="checkbox"
+                checked={draft.isPublic}
+                onChange={(e) => setDraft((prev) => ({ ...prev, isPublic: e.target.checked }))}
+              />
+              <span>{t('bots.publish')}</span>
+            </label>
+
+            {editingId && (
+              <div className="bots-settings__share">
+                <span className="bots-settings__share-label">{t('bots.shareLink')}</span>
+                <button
+                  className="settings__cancel-btn"
+                  onClick={() => {
+                    const bot = bots.find((b) => b.id === editingId)
+                    if (!bot) return
+                    const url = `${window.location.origin}${import.meta.env.BASE_URL}?bot=${bot.slug}`
+                    navigator.clipboard.writeText(url).catch(() => {})
+                  }}
+                >
+                  {t('bots.copyLink')}
+                </button>
+              </div>
+            )}
+
             {error && <div className="settings__msg settings__msg--err">{error}</div>}
 
             <button className="settings__submit" onClick={submit} disabled={loading}>
               {loading ? <Loader2 size={14} className="spin" /> : null}
               {editingId ? t('bots.save') : t('bots.create')}
             </button>
+          </div>
+        </section>
+
+        <div className="settings__divider" />
+
+        <section className="settings__section">
+          <h3 className="settings__label">{t('bots.marketplace')}</h3>
+          <div className="bots-settings__list">
+            {publicBots.length === 0 ? (
+              <div className="sidebar__empty">{t('bots.marketplaceEmpty')}</div>
+            ) : (
+              publicBots.map((bot) => (
+                <div key={bot.id} className="bots-settings__item">
+                  <div className="bots-settings__item-main">
+                    <div className="bots-settings__item-name">{bot.name}</div>
+                    <div className="bots-settings__item-meta">
+                      {(bot.authorName || t('bots.unknownAuthor')) + ' · ' + (MODELS.find((m) => m.id === bot.model)?.name || bot.model)}
+                    </div>
+                  </div>
+                  <button
+                    className="settings__cancel-btn"
+                    disabled={loading}
+                    onClick={async () => {
+                      setLoading(true)
+                      setError('')
+                      try {
+                        await onClonePublic(bot)
+                      } catch (e: unknown) {
+                        setError(e instanceof Error ? e.message : t('bots.saveError'))
+                      } finally {
+                        setLoading(false)
+                      }
+                    }}
+                  >
+                    {t('bots.use')}
+                  </button>
+                </div>
+              ))
+            )}
           </div>
         </section>
       </div>

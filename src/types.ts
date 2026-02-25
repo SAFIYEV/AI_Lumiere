@@ -31,10 +31,14 @@ export interface Conversation {
 
 export interface UserBot {
   id: string
+  userId?: string
   name: string
+  slug: string
+  authorName: string
   description: string
   model: string
   systemPrompt: string
+  isPublic: boolean
   createdAt: string
   updatedAt: string
 }

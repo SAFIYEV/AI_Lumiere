@@ -1016,6 +1016,35 @@ a {
   box-shadow: 0 0 0 3px var(--accent-dim);
 }
 
+.bots-settings__checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.bots-settings__checkbox input {
+  width: 16px;
+  height: 16px;
+}
+
+.bots-settings__share {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+}
+
+.bots-settings__share-label {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
 @keyframes dropdown-in {
   from {
     opacity: 0;

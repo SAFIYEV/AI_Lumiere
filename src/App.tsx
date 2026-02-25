@@ -54,6 +54,7 @@ function ChatApp() {
     () => localStorage.getItem(MODEL_KEY) || 'openai/gpt-oss-120b'
   )
   const [bots, setBots] = useState<UserBot[]>([])
+  const [publicBots, setPublicBots] = useState<UserBot[]>([])
   const [selectedBotId, setSelectedBotId] = useState<string | null>(
     () => localStorage.getItem(BOT_KEY) || null
   )
@@ -123,6 +124,13 @@ function ChatApp() {
       .catch((err) => {
         console.error('[AI Lumiere] Bots load error:', err)
         setBots([])
+      })
+
+    db.loadPublicBots(200)
+      .then((list) => setPublicBots(list))
+      .catch((err) => {
+        console.error('[AI Lumiere] Public bots load error:', err)
+        setPublicBots([])
       })
   }, [user])
 
@@ -212,19 +220,24 @@ function ChatApp() {
   }, [user, t])
 
   const handleCreateBot = useCallback(
-    async (draft: Pick<UserBot, 'name' | 'description' | 'model' | 'systemPrompt'>) => {
+    async (draft: Pick<UserBot, 'name' | 'description' | 'model' | 'systemPrompt' | 'authorName' | 'isPublic'>) => {
       if (!user) return
       const created = await db.createBot(user.id, draft)
       setBots((prev) => [created, ...prev])
       setSelectedBotId(created.id)
+      if (created.isPublic) setPublicBots((prev) => [created, ...prev])
     },
     [user]
   )
 
   const handleUpdateBot = useCallback(
-    async (id: string, draft: Pick<UserBot, 'name' | 'description' | 'model' | 'systemPrompt'>) => {
+    async (id: string, draft: Pick<UserBot, 'name' | 'description' | 'model' | 'systemPrompt' | 'authorName' | 'isPublic'>) => {
       const updated = await db.updateBot(id, draft)
       setBots((prev) => prev.map((b) => (b.id === id ? updated : b)))
+      setPublicBots((prev) => {
+        const without = prev.filter((b) => b.id !== id)
+        return updated.isPublic ? [updated, ...without] : without
+      })
     },
     []
   )
@@ -233,10 +246,44 @@ function ChatApp() {
     async (id: string) => {
       await db.deleteBot(id)
       setBots((prev) => prev.filter((b) => b.id !== id))
+      setPublicBots((prev) => prev.filter((b) => b.id !== id))
       if (selectedBotId === id) setSelectedBotId(null)
     },
     [selectedBotId]
   )
+
+  const handleClonePublicBot = useCallback(
+    async (bot: UserBot) => {
+      if (!user) return
+      const created = await db.createBot(user.id, {
+        name: `${bot.name} (${t('bots.copySuffix')})`,
+        authorName: '',
+        description: bot.description,
+        model: bot.model,
+        systemPrompt: bot.systemPrompt,
+        isPublic: false,
+      })
+      setBots((prev) => [created, ...prev])
+      setSelectedBotId(created.id)
+    },
+    [user, t]
+  )
+
+  useEffect(() => {
+    if (!user) return
+    const botSlug = new URLSearchParams(window.location.search).get('bot')
+    if (!botSlug) return
+    db.loadPublicBotBySlug(botSlug)
+      .then((bot) => {
+        if (!bot) return
+        return handleClonePublicBot(bot)
+      })
+      .then(() => {
+        const cleanUrl = `${window.location.origin}${window.location.pathname}`
+        window.history.replaceState(null, '', cleanUrl)
+      })
+      .catch((err) => console.error('[AI Lumiere] Shared bot load error:', err))
+  }, [user, handleClonePublicBot])
 
   const handleSend = useCallback(
     async (content: string, files?: FileAttachment[]) => {
@@ -429,11 +476,13 @@ function ChatApp() {
           </button>
           <BotSelector
             bots={bots}
+            publicBots={publicBots}
             selectedBotId={selectedBotId}
             onSelect={setSelectedBotId}
             onCreate={handleCreateBot}
             onUpdate={handleUpdateBot}
             onDelete={handleDeleteBot}
+            onClonePublic={handleClonePublicBot}
           />
           {selectedBot ? (
             <button
