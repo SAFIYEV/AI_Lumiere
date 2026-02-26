@@ -69,6 +69,9 @@ export default function BotMarketplace({ open, bots, onClose, onUseBot }: Props)
                     <img
                       className="market-card__avatar"
                       src={bot.avatarUrl || `${import.meta.env.BASE_URL}logo.jpg`}
+                      onError={(e) => {
+                        ;(e.currentTarget as HTMLImageElement).src = `${import.meta.env.BASE_URL}logo.jpg`
+                      }}
                       alt={bot.name}
                     />
                     <div className="market-card__meta">

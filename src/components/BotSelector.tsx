@@ -15,6 +15,15 @@ type BotDraft = {
   mediaLinks: string[]
 }
 
+function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(String(reader.result || ''))
+    reader.onerror = () => reject(new Error('avatar_read_error'))
+    reader.readAsDataURL(file)
+  })
+}
+
 interface Props {
   bots: UserBot[]
   selectedBot: UserBot | null
@@ -271,6 +280,9 @@ function BotManagerModal({
                   <img
                     className="bots-settings__avatar"
                     src={bot.avatarUrl || `${import.meta.env.BASE_URL}logo.jpg`}
+                    onError={(e) => {
+                      ;(e.currentTarget as HTMLImageElement).src = `${import.meta.env.BASE_URL}logo.jpg`
+                    }}
                     alt={bot.name}
                   />
                   <button className="sidebar__action-btn" onClick={() => startEdit(bot)} disabled={loading}>
@@ -349,6 +361,32 @@ function BotManagerModal({
                 onChange={(e) => setDraft((prev) => ({ ...prev, avatarUrl: e.target.value }))}
               />
             </label>
+
+            <button
+              className="settings__cancel-btn"
+              onClick={() => {
+                const input = document.createElement('input')
+                input.type = 'file'
+                input.accept = 'image/*'
+                input.style.display = 'none'
+                document.body.appendChild(input)
+                input.addEventListener('change', async () => {
+                  const f = input.files?.[0]
+                  if (f) {
+                    try {
+                      const dataUrl = await fileToDataUrl(f)
+                      setDraft((prev) => ({ ...prev, avatarUrl: dataUrl }))
+                    } catch {
+                      setError(t('bots.saveError'))
+                    }
+                  }
+                  document.body.removeChild(input)
+                })
+                input.click()
+              }}
+            >
+              {t('bots.uploadAvatar')}
+            </button>
 
             <label className="settings__field">
               <select

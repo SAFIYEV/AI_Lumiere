@@ -271,6 +271,7 @@ function ChatApp() {
         if (!bot) return
         setPublicBots((prev) => (prev.some((b) => b.id === bot.id) ? prev : [bot, ...prev]))
         setSelectedBotId(bot.id)
+        setActiveId(null)
       })
       .then(() => {
         const cleanUrl = `${window.location.origin}${window.location.pathname}`
@@ -294,33 +295,6 @@ function ChatApp() {
       }
       let convId = activeId
       let prevMessages: Message[] = []
-
-      if (!convId) {
-        convId = crypto.randomUUID()
-        const titleText =
-          content || files?.map((f) => f.name).join(', ') || t('app.newChat')
-        const title =
-          titleText.length > 60 ? titleText.slice(0, 60) + '…' : titleText
-        const newConv: Conversation = {
-          id: convId,
-          title,
-          messages: [],
-          model,
-          createdAt: new Date().toISOString(),
-        }
-        setConversations((prev) => [newConv, ...prev])
-        setActiveId(convId)
-
-        try {
-          await db.createConversation(convId, user.id, title, model)
-        } catch (err) {
-          console.error('[AI Lumiere] Create conversation failed:', err)
-        }
-      } else {
-        prevMessages =
-          conversationsRef.current.find((c) => c.id === convId)?.messages ?? []
-      }
-
       const userMsgId = crypto.randomUUID()
       const userMsg: Message = {
         id: userMsgId,
@@ -339,13 +313,38 @@ function ChatApp() {
         timestamp: new Date().toISOString(),
       }
 
-      setConversations((prev) =>
-        prev.map((c) =>
-          c.id === convId
-            ? { ...c, messages: [...c.messages, userMsg, assistantMsg] }
-            : c
+      if (!convId) {
+        convId = crypto.randomUUID()
+        const titleText =
+          content || files?.map((f) => f.name).join(', ') || t('app.newChat')
+        const title =
+          titleText.length > 60 ? titleText.slice(0, 60) + '…' : titleText
+        const newConv: Conversation = {
+          id: convId,
+          title,
+          messages: [userMsg, assistantMsg],
+          model,
+          createdAt: new Date().toISOString(),
+        }
+        setConversations((prev) => [newConv, ...prev])
+        setActiveId(convId)
+
+        try {
+          await db.createConversation(convId, user.id, title, model)
+        } catch (err) {
+          console.error('[AI Lumiere] Create conversation failed:', err)
+        }
+      } else {
+        prevMessages =
+          conversationsRef.current.find((c) => c.id === convId)?.messages ?? []
+        setConversations((prev) =>
+          prev.map((c) =>
+            c.id === convId
+              ? { ...c, messages: [...c.messages, userMsg, assistantMsg] }
+              : c
+          )
         )
-      )
+      }
 
       db.addMessage(userMsgId, convId, 'user', content).catch((err) =>
         console.error('[AI Lumiere] Save user msg failed:', err)
@@ -562,7 +561,11 @@ function ChatApp() {
         open={marketOpen}
         bots={publicBots}
         onClose={() => setMarketOpen(false)}
-        onUseBot={(id) => setSelectedBotId(id)}
+        onUseBot={(id) => {
+          setSelectedBotId(id)
+          setActiveId(null)
+          closeSidebarOnMobile()
+        }}
       />
 
       <AdminPanel open={adminOpen} onClose={() => setAdminOpen(false)} />
