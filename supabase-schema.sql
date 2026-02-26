@@ -33,16 +33,26 @@ CREATE TABLE chat_bots (
   name          TEXT NOT NULL,
   slug          TEXT NOT NULL UNIQUE,
   author_name   TEXT NOT NULL DEFAULT '',
+  username      TEXT NOT NULL UNIQUE
+                CHECK (
+                  username = lower(username)
+                  AND username ~ '^[a-z0-9_]{3,24}$'
+                  AND username !~ '(ai|lumiere|safiyev|marat)'
+                ),
   description   TEXT NOT NULL DEFAULT '',
   model         TEXT NOT NULL,
   system_prompt TEXT NOT NULL DEFAULT '',
   is_public     BOOLEAN NOT NULL DEFAULT false,
+  avatar_url    TEXT NOT NULL DEFAULT '',
+  media_links   TEXT[] NOT NULL DEFAULT '{}',
+  use_count     INTEGER NOT NULL DEFAULT 0,
   created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at    TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE INDEX idx_chat_bots_user ON chat_bots(user_id);
 CREATE INDEX idx_chat_bots_public ON chat_bots(is_public, updated_at DESC);
+CREATE INDEX idx_chat_bots_use_count ON chat_bots(use_count DESC);
 
 -- 3. Enable Row Level Security
 ALTER TABLE conversations ENABLE ROW LEVEL SECURITY;
@@ -97,3 +107,48 @@ CREATE POLICY "Users can update own bots"
 CREATE POLICY "Users can delete own bots"
   ON chat_bots FOR DELETE
   USING (auth.uid() = user_id);
+
+-- Admin read (configure admin emails)
+CREATE POLICY "Admins can view all bots"
+  ON chat_bots FOR SELECT
+  USING (lower(coalesce(auth.jwt() ->> 'email', '')) IN ('safievmarat65@gmail.com'));
+
+CREATE POLICY "Admins can view all conversations"
+  ON conversations FOR SELECT
+  USING (lower(coalesce(auth.jwt() ->> 'email', '')) IN ('safievmarat65@gmail.com'));
+
+CREATE POLICY "Admins can view all messages"
+  ON messages FOR SELECT
+  USING (lower(coalesce(auth.jwt() ->> 'email', '')) IN ('safievmarat65@gmail.com'));
+
+-- Username is immutable once created
+CREATE OR REPLACE FUNCTION prevent_bot_username_update()
+RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  IF NEW.username <> OLD.username THEN
+    RAISE EXCEPTION 'username cannot be changed';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_prevent_bot_username_update ON chat_bots;
+CREATE TRIGGER trg_prevent_bot_username_update
+BEFORE UPDATE ON chat_bots
+FOR EACH ROW
+EXECUTE FUNCTION prevent_bot_username_update();
+
+-- usage counter rpc for trending
+CREATE OR REPLACE FUNCTION increment_bot_usage(bot_id_input uuid)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+  UPDATE chat_bots
+  SET use_count = use_count + 1,
+      updated_at = now()
+  WHERE id = bot_id_input
+    AND (is_public = true OR user_id = auth.uid());
+END;
+$$;

@@ -11,13 +11,19 @@ import Chat from './components/Chat'
 import WelcomeScreen from './components/WelcomeScreen'
 import ModelSelector from './components/ModelSelector'
 import BotSelector from './components/BotSelector'
+import BotMarketplace from './components/BotMarketplace'
+import AdminPanel from './components/AdminPanel'
 import InputArea from './components/InputArea'
 import Settings from './components/Settings'
-import { PanelLeftClose, PanelLeft, Sparkles, Sun, Moon } from 'lucide-react'
+import { PanelLeftClose, PanelLeft, Sparkles, Sun, Moon, Store, Shield } from 'lucide-react'
 
 const MODEL_KEY = 'ai-lumiere-model'
 const THEME_KEY = 'ai-lumiere-theme'
 const BOT_KEY = 'ai-lumiere-selected-bot'
+const ADMIN_EMAILS = (import.meta.env.VITE_ADMIN_EMAILS || 'safievmarat65@gmail.com')
+  .split(',')
+  .map((x: string) => x.trim().toLowerCase())
+  .filter(Boolean)
 
 export default function App() {
   return (
@@ -65,6 +71,8 @@ function ChatApp() {
   const [dbLoading, setDbLoading] = useState(true)
   const [dbError, setDbError] = useState<string | null>(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [marketOpen, setMarketOpen] = useState(false)
+  const [adminOpen, setAdminOpen] = useState(false)
   const [theme, setTheme] = useState(
     () => localStorage.getItem(THEME_KEY) || 'dark'
   )
@@ -74,8 +82,9 @@ function ChatApp() {
   const pendingFlushRef = useRef<{ convId: string; msgId: string } | null>(null)
   const conversationsRef = useRef(conversations)
   conversationsRef.current = conversations
-  const botsRef = useRef(bots)
-  botsRef.current = bots
+  const allBots = [...bots, ...publicBots.filter((p) => !bots.some((b) => b.id === p.id))]
+  const botsRef = useRef(allBots)
+  botsRef.current = allBots
 
   const flushStreamContent = useCallback(() => {
     const pending = pendingFlushRef.current
@@ -98,7 +107,8 @@ function ChatApp() {
 
   const activeConversation =
     conversations.find((c) => c.id === activeId) ?? null
-  const selectedBot = bots.find((b) => b.id === selectedBotId) || null
+  const selectedBot = allBots.find((b) => b.id === selectedBotId) || null
+  const isAdmin = ADMIN_EMAILS.includes((user?.email || '').toLowerCase())
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
@@ -144,10 +154,10 @@ function ChatApp() {
   }, [selectedBotId])
 
   useEffect(() => {
-    if (selectedBotId && !bots.some((b) => b.id === selectedBotId)) {
+    if (selectedBotId && !allBots.some((b) => b.id === selectedBotId)) {
       setSelectedBotId(null)
     }
-  }, [bots, selectedBotId])
+  }, [allBots, selectedBotId])
 
   const toggleTheme = useCallback(
     () => setTheme((prev) => (prev === 'dark' ? 'light' : 'dark')),
@@ -220,7 +230,7 @@ function ChatApp() {
   }, [user, t])
 
   const handleCreateBot = useCallback(
-    async (draft: Pick<UserBot, 'name' | 'description' | 'model' | 'systemPrompt' | 'authorName' | 'isPublic'>) => {
+    async (draft: Pick<UserBot, 'name' | 'description' | 'model' | 'systemPrompt' | 'authorName' | 'isPublic' | 'username' | 'avatarUrl' | 'mediaLinks'>) => {
       if (!user) return
       const created = await db.createBot(user.id, draft)
       setBots((prev) => [created, ...prev])
@@ -231,7 +241,7 @@ function ChatApp() {
   )
 
   const handleUpdateBot = useCallback(
-    async (id: string, draft: Pick<UserBot, 'name' | 'description' | 'model' | 'systemPrompt' | 'authorName' | 'isPublic'>) => {
+    async (id: string, draft: Pick<UserBot, 'name' | 'description' | 'model' | 'systemPrompt' | 'authorName' | 'isPublic' | 'avatarUrl' | 'mediaLinks' | 'username'>) => {
       const updated = await db.updateBot(id, draft)
       setBots((prev) => prev.map((b) => (b.id === id ? updated : b)))
       setPublicBots((prev) => {
@@ -252,23 +262,6 @@ function ChatApp() {
     [selectedBotId]
   )
 
-  const handleClonePublicBot = useCallback(
-    async (bot: UserBot) => {
-      if (!user) return
-      const created = await db.createBot(user.id, {
-        name: `${bot.name} (${t('bots.copySuffix')})`,
-        authorName: '',
-        description: bot.description,
-        model: bot.model,
-        systemPrompt: bot.systemPrompt,
-        isPublic: false,
-      })
-      setBots((prev) => [created, ...prev])
-      setSelectedBotId(created.id)
-    },
-    [user, t]
-  )
-
   useEffect(() => {
     if (!user) return
     const botSlug = new URLSearchParams(window.location.search).get('bot')
@@ -276,14 +269,15 @@ function ChatApp() {
     db.loadPublicBotBySlug(botSlug)
       .then((bot) => {
         if (!bot) return
-        return handleClonePublicBot(bot)
+        setPublicBots((prev) => (prev.some((b) => b.id === bot.id) ? prev : [bot, ...prev]))
+        setSelectedBotId(bot.id)
       })
       .then(() => {
         const cleanUrl = `${window.location.origin}${window.location.pathname}`
         window.history.replaceState(null, '', cleanUrl)
       })
       .catch((err) => console.error('[AI Lumiere] Shared bot load error:', err))
-  }, [user, handleClonePublicBot])
+  }, [user])
 
   const handleSend = useCallback(
     async (content: string, files?: FileAttachment[]) => {
@@ -293,6 +287,11 @@ function ChatApp() {
         ? botsRef.current.find((b) => b.id === selectedBotId) || null
         : null
       const model = activeBot?.model || selectedModel
+      if (activeBot) {
+        db.incrementBotUsage(activeBot.id).catch((err) =>
+          console.error('[AI Lumiere] Bot usage increment failed:', err)
+        )
+      }
       let convId = activeId
       let prevMessages: Message[] = []
 
@@ -476,14 +475,16 @@ function ChatApp() {
           </button>
           <BotSelector
             bots={bots}
-            publicBots={publicBots}
+            selectedBot={selectedBot}
             selectedBotId={selectedBotId}
             onSelect={setSelectedBotId}
             onCreate={handleCreateBot}
             onUpdate={handleUpdateBot}
             onDelete={handleDeleteBot}
-            onClonePublic={handleClonePublicBot}
           />
+          <button className="icon-btn" onClick={() => setMarketOpen(true)} title={t('bots.marketplace')}>
+            <Store size={18} />
+          </button>
           {selectedBot ? (
             <button
               className="model-selector__trigger"
@@ -499,6 +500,15 @@ function ChatApp() {
             />
           )}
           <div className="main__header-right">
+            {isAdmin && (
+              <button
+                className="icon-btn"
+                onClick={() => setAdminOpen(true)}
+                aria-label={t('admin.title')}
+              >
+                <Shield size={18} />
+              </button>
+            )}
             <button
               className="icon-btn"
               onClick={toggleTheme}
@@ -547,6 +557,15 @@ function ChatApp() {
         onThemeChange={setTheme}
         onClearChats={handleClearChats}
       />
+
+      <BotMarketplace
+        open={marketOpen}
+        bots={publicBots}
+        onClose={() => setMarketOpen(false)}
+        onUseBot={(id) => setSelectedBotId(id)}
+      />
+
+      <AdminPanel open={adminOpen} onClose={() => setAdminOpen(false)} />
 
     </div>
   )

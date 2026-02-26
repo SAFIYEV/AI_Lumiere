@@ -1,5 +1,5 @@
 import { supabase } from './supabase'
-import type { Conversation, Message, UserBot } from '../types'
+import type { AdminSummary, Conversation, Message, UserBot } from '../types'
 
 async function retry<T>(fn: () => Promise<T>, attempts = 3, delay = 500): Promise<T> {
   for (let i = 0; i < attempts; i++) {
@@ -29,10 +29,14 @@ function mapBotRow(row: Record<string, unknown>): UserBot {
     name: row.name as string,
     slug: row.slug as string,
     authorName: (row.author_name as string) || '',
+    username: (row.username as string) || '',
     description: (row.description as string) || '',
     model: row.model as string,
     systemPrompt: (row.system_prompt as string) || '',
     isPublic: Boolean(row.is_public),
+    avatarUrl: (row.avatar_url as string) || '',
+    mediaLinks: (row.media_links as string[]) || [],
+    useCount: Number(row.use_count || 0),
     createdAt: row.created_at as string,
     updatedAt: row.updated_at as string,
   }
@@ -133,7 +137,7 @@ export async function updateMessageContent(
 export async function loadBots(userId: string): Promise<UserBot[]> {
   const { data, error } = await supabase
     .from('chat_bots')
-    .select('id, user_id, name, slug, author_name, description, model, system_prompt, is_public, created_at, updated_at')
+    .select('id, user_id, name, slug, author_name, username, description, model, system_prompt, is_public, avatar_url, media_links, use_count, created_at, updated_at')
     .eq('user_id', userId)
     .order('updated_at', { ascending: false })
 
@@ -144,7 +148,7 @@ export async function loadBots(userId: string): Promise<UserBot[]> {
 
 export async function createBot(
   userId: string,
-  payload: Pick<UserBot, 'name' | 'description' | 'model' | 'systemPrompt' | 'authorName' | 'isPublic'>
+  payload: Pick<UserBot, 'name' | 'description' | 'model' | 'systemPrompt' | 'authorName' | 'isPublic' | 'username' | 'avatarUrl' | 'mediaLinks'>
 ): Promise<UserBot> {
   const baseSlug = slugify(payload.name) || `bot-${Math.floor(Date.now() / 1000)}`
   const slug = `${baseSlug}-${Math.random().toString(36).slice(2, 7)}`
@@ -155,12 +159,15 @@ export async function createBot(
       name: payload.name,
       slug,
       author_name: payload.authorName,
+      username: payload.username,
       description: payload.description,
       model: payload.model,
       system_prompt: payload.systemPrompt,
       is_public: payload.isPublic,
+      avatar_url: payload.avatarUrl,
+      media_links: payload.mediaLinks,
     })
-    .select('id, user_id, name, slug, author_name, description, model, system_prompt, is_public, created_at, updated_at')
+    .select('id, user_id, name, slug, author_name, username, description, model, system_prompt, is_public, avatar_url, media_links, use_count, created_at, updated_at')
     .single()
 
   if (error) throw error
@@ -169,8 +176,15 @@ export async function createBot(
 
 export async function updateBot(
   id: string,
-  payload: Pick<UserBot, 'name' | 'description' | 'model' | 'systemPrompt' | 'authorName' | 'isPublic'>
+  payload: Pick<UserBot, 'name' | 'description' | 'model' | 'systemPrompt' | 'authorName' | 'isPublic' | 'avatarUrl' | 'mediaLinks'>
 ): Promise<UserBot> {
+  const { data: current, error: currentErr } = await supabase
+    .from('chat_bots')
+    .select('username')
+    .eq('id', id)
+    .single()
+  if (currentErr) throw currentErr
+
   const { data, error } = await supabase
     .from('chat_bots')
     .update({
@@ -180,10 +194,13 @@ export async function updateBot(
       model: payload.model,
       system_prompt: payload.systemPrompt,
       is_public: payload.isPublic,
+      avatar_url: payload.avatarUrl,
+      media_links: payload.mediaLinks,
+      username: current.username,
       updated_at: new Date().toISOString(),
     })
     .eq('id', id)
-    .select('id, user_id, name, slug, author_name, description, model, system_prompt, is_public, created_at, updated_at')
+    .select('id, user_id, name, slug, author_name, username, description, model, system_prompt, is_public, avatar_url, media_links, use_count, created_at, updated_at')
     .single()
 
   if (error) throw error
@@ -198,7 +215,7 @@ export async function deleteBot(id: string): Promise<void> {
 export async function loadPublicBots(limit = 100): Promise<UserBot[]> {
   const { data, error } = await supabase
     .from('chat_bots')
-    .select('id, user_id, name, slug, author_name, description, model, system_prompt, is_public, created_at, updated_at')
+    .select('id, user_id, name, slug, author_name, username, description, model, system_prompt, is_public, avatar_url, media_links, use_count, created_at, updated_at')
     .eq('is_public', true)
     .order('updated_at', { ascending: false })
     .limit(limit)
@@ -210,7 +227,7 @@ export async function loadPublicBots(limit = 100): Promise<UserBot[]> {
 export async function loadPublicBotBySlug(slug: string): Promise<UserBot | null> {
   const { data, error } = await supabase
     .from('chat_bots')
-    .select('id, user_id, name, slug, author_name, description, model, system_prompt, is_public, created_at, updated_at')
+    .select('id, user_id, name, slug, author_name, username, description, model, system_prompt, is_public, avatar_url, media_links, use_count, created_at, updated_at')
     .eq('slug', slug)
     .eq('is_public', true)
     .maybeSingle()
@@ -218,4 +235,37 @@ export async function loadPublicBotBySlug(slug: string): Promise<UserBot | null>
   if (error) throw error
   if (!data) return null
   return mapBotRow(data as unknown as Record<string, unknown>)
+}
+
+export async function incrementBotUsage(id: string): Promise<void> {
+  const { error } = await supabase.rpc('increment_bot_usage', { bot_id_input: id })
+  if (error) throw error
+}
+
+export async function loadAdminSummary(): Promise<AdminSummary> {
+  const [totalBotsRes, publicBotsRes, convRes, msgRes, topRes] = await Promise.all([
+    supabase.from('chat_bots').select('*', { count: 'exact', head: true }),
+    supabase.from('chat_bots').select('*', { count: 'exact', head: true }).eq('is_public', true),
+    supabase.from('conversations').select('*', { count: 'exact', head: true }),
+    supabase.from('messages').select('*', { count: 'exact', head: true }),
+    supabase
+      .from('chat_bots')
+      .select('id, user_id, name, slug, author_name, username, description, model, system_prompt, is_public, avatar_url, media_links, use_count, created_at, updated_at')
+      .order('use_count', { ascending: false })
+      .limit(10),
+  ])
+
+  if (totalBotsRes.error) throw totalBotsRes.error
+  if (publicBotsRes.error) throw publicBotsRes.error
+  if (convRes.error) throw convRes.error
+  if (msgRes.error) throw msgRes.error
+  if (topRes.error) throw topRes.error
+
+  return {
+    totalBots: totalBotsRes.count || 0,
+    publicBots: publicBotsRes.count || 0,
+    totalConversations: convRes.count || 0,
+    totalMessages: msgRes.count || 0,
+    topBots: (topRes.data || []).map((row) => mapBotRow(row as unknown as Record<string, unknown>)),
+  }
 }

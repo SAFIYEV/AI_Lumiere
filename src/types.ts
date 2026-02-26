@@ -35,12 +35,24 @@ export interface UserBot {
   name: string
   slug: string
   authorName: string
+  username: string
   description: string
   model: string
   systemPrompt: string
   isPublic: boolean
+  avatarUrl: string
+  mediaLinks: string[]
+  useCount: number
   createdAt: string
   updatedAt: string
+}
+
+export interface AdminSummary {
+  totalBots: number
+  publicBots: number
+  totalConversations: number
+  totalMessages: number
+  topBots: UserBot[]
 }
 
 export interface ModelInfo {
