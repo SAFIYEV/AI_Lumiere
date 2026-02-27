@@ -55,6 +55,12 @@ export interface AdminSummary {
   topBots: UserBot[]
 }
 
+export interface UserBotStats {
+  botsCount: number
+  usersReach: number
+  promptsCount: number
+}
+
 export interface ModelInfo {
   id: string
   name: string

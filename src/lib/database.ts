@@ -1,5 +1,5 @@
 import { supabase } from './supabase'
-import type { AdminSummary, Conversation, Message, UserBot } from '../types'
+import type { AdminSummary, Conversation, Message, UserBot, UserBotStats } from '../types'
 
 async function retry<T>(fn: () => Promise<T>, attempts = 3, delay = 500): Promise<T> {
   for (let i = 0; i < attempts; i++) {
@@ -267,5 +267,45 @@ export async function loadAdminSummary(): Promise<AdminSummary> {
     totalConversations: convRes.count || 0,
     totalMessages: msgRes.count || 0,
     topBots: (topRes.data || []).map((row) => mapBotRow(row as unknown as Record<string, unknown>)),
+  }
+}
+
+export async function loadUserBotStats(userId: string): Promise<UserBotStats> {
+  const [botsRes, convRes] = await Promise.all([
+    supabase
+      .from('chat_bots')
+      .select('use_count', { count: 'exact' })
+      .eq('user_id', userId),
+    supabase
+      .from('conversations')
+      .select('id')
+      .eq('user_id', userId),
+  ])
+
+  if (botsRes.error) throw botsRes.error
+  if (convRes.error) throw convRes.error
+
+  const usersReach = (botsRes.data || []).reduce(
+    (sum, row) => sum + Number((row as { use_count?: number }).use_count || 0),
+    0
+  )
+
+  const convIds = (convRes.data || []).map((c) => (c as { id: string }).id)
+  let promptsCount = 0
+
+  if (convIds.length > 0) {
+    const { count, error } = await supabase
+      .from('messages')
+      .select('*', { count: 'exact', head: true })
+      .in('conversation_id', convIds)
+      .eq('role', 'user')
+    if (error) throw error
+    promptsCount = count || 0
+  }
+
+  return {
+    botsCount: botsRes.count || 0,
+    usersReach,
+    promptsCount,
   }
 }

@@ -87,6 +87,10 @@ const ru = {
   'settings.clearChatsConfirm': 'Вы уверены? Все чаты будут удалены безвозвратно.',
   'settings.clearChatsBtn': 'Удалить все чаты',
   'settings.clearChatsDone': 'Все чаты удалены',
+  'settings.botStats': 'Статистика ваших ботов',
+  'settings.botsCount': 'Ботов',
+  'settings.usersReach': 'Пользователей',
+  'settings.promptsCount': 'Промптов',
 
   // Export
   'export.title': 'Экспорт документа',
@@ -245,6 +249,10 @@ const en: Record<keyof typeof ru, string> = {
   'settings.clearChatsConfirm': 'Are you sure? All chats will be permanently deleted.',
   'settings.clearChatsBtn': 'Delete all chats',
   'settings.clearChatsDone': 'All chats deleted',
+  'settings.botStats': 'Your bot statistics',
+  'settings.botsCount': 'Bots',
+  'settings.usersReach': 'Users',
+  'settings.promptsCount': 'Prompts',
 
   'export.title': 'Export Document',
   'export.preview': 'Preview',
@@ -398,6 +406,10 @@ const kz: Record<keyof typeof ru, string> = {
   'settings.clearChatsConfirm': 'Сенімдісіз бе? Барлық чаттар біржола жойылады.',
   'settings.clearChatsBtn': 'Барлық чаттарды жою',
   'settings.clearChatsDone': 'Барлық чаттар жойылды',
+  'settings.botStats': 'Бот статистикасы',
+  'settings.botsCount': 'Боттар',
+  'settings.usersReach': 'Пайдаланушылар',
+  'settings.promptsCount': 'Промпттар',
 
   'export.title': 'Құжатты экспорттау',
   'export.preview': 'Алдын ала қарау',

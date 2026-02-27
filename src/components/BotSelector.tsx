@@ -46,6 +46,11 @@ const emptyDraft = (fallbackModel: string): BotDraft => ({
   mediaLinks: [''],
 })
 
+const DEFAULT_VISION_MODEL =
+  MODELS.find((m) => m.id === 'meta-llama/llama-4-scout-17b-16e-instruct')?.id ||
+  MODELS.find((m) => m.vision)?.id ||
+  MODELS[0].id
+
 export default function BotSelector({
   bots,
   selectedBot,
@@ -161,13 +166,13 @@ function BotManagerModal({
 }) {
   const { t } = useLang()
   const [editingId, setEditingId] = useState<string | null>(null)
-  const [draft, setDraft] = useState<BotDraft>(() => emptyDraft(MODELS[0].id))
+  const [draft, setDraft] = useState<BotDraft>(() => emptyDraft(DEFAULT_VISION_MODEL))
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
   const startCreate = () => {
     setEditingId(null)
-    setDraft(emptyDraft(MODELS[0].id))
+    setDraft(emptyDraft(DEFAULT_VISION_MODEL))
     setError('')
   }
 
@@ -224,10 +229,13 @@ function BotManagerModal({
           mediaLinks: cleanedMedia,
         })
       } else {
+        // New bots are always initialized on a vision-capable model by default.
+        const visionModel = MODELS.find((m) => m.vision)?.id || DEFAULT_VISION_MODEL
         await onCreate({
           ...draft,
           name,
           username,
+          model: visionModel,
           systemPrompt,
           mediaLinks: cleanedMedia,
         })

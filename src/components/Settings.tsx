@@ -3,6 +3,9 @@ import { X, Mail, Lock, Sun, Moon, Loader2, Check, Globe, Trash2 } from 'lucide-
 import { useAuth } from '../contexts/AuthContext'
 import { useLang } from '../contexts/LangContext'
 import { LANGS } from '../lib/i18n'
+import { useEffect } from 'react'
+import * as db from '../lib/database'
+import type { UserBotStats } from '../types'
 
 interface Props {
   open: boolean
@@ -26,6 +29,17 @@ export default function Settings({ open, onClose, theme, onThemeChange, onClearC
   const [clearConfirm, setClearConfirm] = useState(false)
   const [clearingChats, setClearingChats] = useState(false)
   const [clearDone, setClearDone] = useState(false)
+  const [botStats, setBotStats] = useState<UserBotStats | null>(null)
+  const [botStatsLoading, setBotStatsLoading] = useState(false)
+
+  useEffect(() => {
+    if (!open || !user?.id) return
+    setBotStatsLoading(true)
+    db.loadUserBotStats(user.id)
+      .then((stats) => setBotStats(stats))
+      .catch(() => setBotStats(null))
+      .finally(() => setBotStatsLoading(false))
+  }, [open, user?.id])
 
   if (!open) return null
 
@@ -118,6 +132,30 @@ export default function Settings({ open, onClose, theme, onThemeChange, onClearC
               {t('settings.light')}
             </button>
           </div>
+        </section>
+
+        <div className="settings__divider" />
+
+        {/* Bot Stats */}
+        <section className="settings__section">
+          <h3 className="settings__label">{t('settings.botStats')}</h3>
+          {botStatsLoading ? (
+            <div className="settings__current">
+              <Loader2 size={14} className="spin" /> {t('input.processing')}
+            </div>
+          ) : (
+            <div className="admin-cards">
+              <div className="admin-card">
+                <span>{t('settings.botsCount')}: {botStats?.botsCount || 0}</span>
+              </div>
+              <div className="admin-card">
+                <span>{t('settings.usersReach')}: {botStats?.usersReach || 0}</span>
+              </div>
+              <div className="admin-card">
+                <span>{t('settings.promptsCount')}: {botStats?.promptsCount || 0}</span>
+              </div>
+            </div>
+          )}
         </section>
 
         <div className="settings__divider" />
